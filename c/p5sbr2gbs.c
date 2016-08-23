@@ -1,5 +1,5 @@
 /*
-p5sbr2gbs 0.1
+p5sbr2gbs 0.1 (by Haaglar)
 Searchs a file for single music data created using paragon5 (Game Boy) tracker (by Stéphane Hockenhull) compiles and creates a gbs of it
 To be used on the single bank player roms
 Really just searches for a pattern takes some data then slaps on some stuff before it into a new file
