@@ -1,5 +1,5 @@
 /*
-p5sbr2gbs 0.1 (by Haaglar)
+p5sbr2gbs 0.2 (by haaglar)
 Searchs a file for single music data created using paragon5 (Game Boy) tracker (by Stéphane Hockenhull) compiles and creates a gbs of it
 To be used on the single bank player roms
 Really just searches for a pattern takes some data then slaps on some stuff before it into a new file
@@ -7,6 +7,7 @@ Lazy mod of my carillion one
 Worked on the demo songs and a couple of files that had lying around
 
 Update Log:
+0.2: Gbs actually works now on things other than VLC, removal of excess data to gbs
 0.1: Initial Release.
 */
 
@@ -65,8 +66,8 @@ int main (int argc, char *argv[])
 		{
 			unsigned int gbs = 0x534247; /*Gbs header*/
 			unsigned int track = 0x010101; /* version default and number of tracks*/
-			unsigned int init = 0x3fA0; /*Gbs init*/
-			unsigned int load = 0x3fA0; /*Gbs load*/
+			unsigned int init = 0x3ff0; /*Gbs init*/
+			unsigned int load = 0x3ff0; /*Gbs load*/
 			unsigned int play = 0x4003; /*Gbs play*/
 			unsigned int stackpointer = 0x8000cffe; /*Stackpointer and timer controls*/
 			char title[101]={0}; /* Title max 32 bytes*/
@@ -74,7 +75,7 @@ int main (int argc, char *argv[])
 			char copyright[101] ={0}; /* copyright max 32 bytes*/
 			unsigned char *block; /*data to be copied from orignal file*/
 			unsigned char needle[6] = {0xC3,0x1B,0x40,0xC3,0x79,0x41 }; /* Search for the header*/
-			unsigned char RST_VECTORS[96] = { 0xF5, 0x21, 0xE0, 0x3F, 0x85, 0x6F, 0x7E, 0xEA, 0x00, 0x20, 0xCD, 0x00, 0x40, 0xF1, 0x21, 0xC0, 0x3F, 0x85, 0x6F, 0x7E, 0xC3, 0x06, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x01, 0x04, 0x01, 0x03, 0x02, 0x01, 0x01, 0x06, 0x00, 0x03, 0x05, 0x06, 0x00, 0x02, 0x03, 0x04, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0x01, 0x03, 0x04, 0x03, 0x03, 0x01, 0x05, 0x04, 0x04, 0x01, 0x02, 0x02, 0x04, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }; /*More magic data from the rip Who Wants to Be a Millionaire 2nd Edition by Kingshriek, Thanks again*/
+			unsigned char RST_VECTORS[16] = { 0xCD, 0x00, 0x40, 0xC3, 0x06, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }; /*Call 4000; jp 4006; nop *10 , Thanks Kingshriek*/
 
 			void *local;
 			fseek(file, 0, SEEK_END);
@@ -102,7 +103,7 @@ int main (int argc, char *argv[])
 				fwrite(title,1,32,toCreate);
 				fwrite(author,1,32,toCreate);
 				fwrite(copyright,1,32,toCreate);
-				fwrite(RST_VECTORS, 1, 96, toCreate);
+				fwrite(RST_VECTORS, 1, 16, toCreate);
 				if(block == local) /* File is just music data, hopefully.........*/
 				{
 					fwrite(local,1, Length,toCreate);
