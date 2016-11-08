@@ -1,11 +1,12 @@
 /*
-carillon2gbs 0.3
+carillon2gbs 0.4
 Searchs a file for a singletrack carillon music data (.bin from the split) and creates a gbs of it
 Really just searches for a pattern takes some data then slaps on some stuff before it into a new file 
 Old bad code
-Worked on the demo songs and a couple of files that had lying around
+Worked on the demo songs and a couple of files that had lying around, fails on some aswell ()
 
 Update Log:
+0.4: Less error riddled code
 0.3: Allow manual input Title, author and copyright information. Freeing memory, removed useless variables
 0.2: Allow searching of files to find cariillon music data
 0.1: Initial Release.
@@ -13,38 +14,39 @@ Update Log:
 */
 /* Common size of single track of carillon music data. Double it if neccessary */
 #define BLOCK_SIZE 8192
+//For visual studio users
+//#define _CRT_SECURE_NO_WARNINGS 
 #include <stdio.h>
 #include <string.h>
 #include <conio.h>
 #include <stdlib.h>
 #include <stddef.h>
 
-int found = 0;
-/*An Implementation of memmem taken from http://stackoverflow.com/questions/2188914/c-searching-for-a-string-in-a-file by caf*/
-/*Can use standard memmem due to dev environment*/
-void *memmemSO(const void *haystack, size_t hlen, const void *needle, size_t nlen)
-{
-	int needle_first;
-	const void *p = haystack;
-	size_t plen = hlen;
 
-	if (!nlen)
+void *memmem(const void *l, size_t l_len, const void *s, size_t s_len)
+{
+	register char *cur, *last;
+	const char *cl = (const char *)l;
+	const char *cs = (const char *)s;
+
+	/* we need something to compare */
+	if (l_len == 0 || s_len == 0)
 		return NULL;
 
-	needle_first = *(unsigned char *)needle;
-	while (plen >= nlen && (p = memchr(p, needle_first, plen - nlen + 1)))
-	{
-		if (!memcmp(p, needle, nlen))
-		{
-			found = 1;
-			return (void *)p;
-		}
+	/* "s" must be smaller or equal to "l" */
+	if (l_len < s_len)
+		return NULL;
 
-		p++;
-		plen = hlen - (p - haystack);
-	}
+	/* the last position where its possible to find "s" in "l" */
+	last = (char *)cl + l_len - s_len;
+
+	for (cur = (char *)cl; cur <= last; cur++)
+		if (cur[0] == cs[0] && memcmp(cur, cs, s_len) == 0)
+			return cur;
+
 	return NULL;
 }
+
 
 int main (int argc, char *argv[])
 {
@@ -77,7 +79,7 @@ int main (int argc, char *argv[])
 			unsigned char *block; /*data to be copied from orignal file*/
 			unsigned char RST_VECTORS[16] = {0xcd,0x00,0x40,0xc3,0x03,0x40,0x00,0x00,
 												0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
-											}; /* Dunno how this works, magic data, just works, taken from the LightForce Intro 1 rip by Kingshriek, had it working without it at one point doing something different and so the code doesnt need it, but im to lazy to fix it again*/
+											}; /* Call 4000, jmp 4003 just works, taken from the LightForce Intro 1 rip by Kingshriek*/
 
 			unsigned char needle[15] = {0x43,0x41,0x52,0x49,0x4c, 0x4c,0x4f,0x4e,0x20,0x50,0x4c,0x41,0x59,0x45,0x52}; /* Search for the CARILLON PLAYER (present in all unedited carillon music files) value*/
 			void *local;
@@ -86,8 +88,8 @@ int main (int argc, char *argv[])
 			rewind(file);
 			block = malloc(sizeof(unsigned char)*Length);
 			fread(block,1,Length,file);
-			local = memmemSO(block,Length,needle,15)- 15; /*Search for "CARILLON PLAYER", then move back by 15, the length of the data that occurs before the searched string*/
-			if (local && found)
+			local = ((char *)memmem(block,Length,needle,15)- 15); /*Search for "CARILLON PLAYER", then move back by 15, the length of the data that occurs before the searched string*/
+			if (local)
 			{
 				printf("Title info (max 32 characters): ");
 				fgets(title,101,stdin);
